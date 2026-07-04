@@ -1,0 +1,215 @@
+#######################################################################
+# Test for copying block of size 4;
+#######################################################################
+	.pos 0
+main:	irmovq Stack, %rsp  	# Set up stack pointer
+
+	# Set up arguments for copy function and then invoke it
+	irmovq $4, %rdx		# src and dst have 4 elements
+	irmovq dest, %rsi	# dst array
+	irmovq src, %rdi	# src array
+	call ncopy		 
+	halt			# should halt with num nonzeros in %rax
+StartFun:
+#/* $begin ncopy-ys */
+##################################################################
+# ncopy.ys - Copy a src block of len words to dst.
+# Return the number of positive words (>0) contained in src.
+#
+# Include your name and ID here.
+#
+# Describe how and why you modified the baseline code.
+#
+##################################################################
+# Do not modify this portion
+# Function prologue.
+# %rdi = src, %rsi = dst, %rdx = len
+ncopy:
+
+##################################################################
+# You can modify this portion
+	# Loop header
+	xorq %rax,%rax		# count = 0;
+	iaddq $-8,%rdx		# len < 8?
+	mrmovq (%rdi), %r8
+	jl CopyLess8		# if so, goto CopyLess8:
+
+Loop:		# Copy 8 bytes at a time
+	andq %r8, %r8		# val <= 0?
+	rmmovq %r8, (%rsi)
+	mrmovq 8(%rdi), %r9
+	jle Npos1		# if so, goto Npos:
+	iaddq $1, %rax		# count++
+Npos1:
+ 	andq %r9, %r9		# val <= 0?
+	rmmovq %r9, 8(%rsi)
+	mrmovq 16(%rdi), %r10
+	jle Npos2		# if so, goto Npos:
+	iaddq $1, %rax		# count++
+Npos2:
+	andq %r10, %r10		# val <= 0?
+	mrmovq 24(%rdi), %r11
+	rmmovq %r10, 16(%rsi)
+	jle Npos3		# if so, goto Npos:
+	iaddq $1, %rax		# count++
+Npos3:
+ 	andq %r11, %r11		# val <= 0?
+	rmmovq %r11, 24(%rsi)
+	mrmovq 32(%rdi), %r12
+	jle Npos4		# if so, goto Npos:
+	iaddq $1, %rax		# count++
+Npos4:
+ 	andq %r12, %r12		# val <= 0?
+	rmmovq %r12, 32(%rsi)
+	mrmovq 40(%rdi), %r13
+	jle Npos5		# if so, goto Npos:
+	iaddq $1, %rax		# count++
+Npos5:
+ 	andq %r13, %r13		# val <= 0?
+	rmmovq %r13, 40(%rsi)
+	mrmovq 48(%rdi), %r14
+	jle Npos6		# if so, goto Npos:
+	iaddq $1, %rax		# count++
+Npos6:
+ 	andq %r14, %r14		# val <= 0?
+	rmmovq %r14, 48(%rsi)
+	mrmovq 56(%rdi), %rbx
+	jle Npos7		# if so, goto Npos:
+	iaddq $1, %rax		# count++
+Npos7:
+ 	andq %rbx, %rbx		# val <= 0?
+	rmmovq %rbx, 56(%rsi)
+	jle Npos8		# if so, goto Npos:
+	iaddq $1, %rax		# count++
+Npos8:
+
+	# Advance pointers
+	iaddq $64, %rdi
+	iaddq $64, %rsi
+	iaddq $-8, %rdx		# len-=8
+	mrmovq (%rdi), %r8
+	jge Loop			# if so, goto Loop:
+    
+
+CopyLess8:
+	iaddq $8,%rdx		# len = -8?
+	je Done		# if so, goto Done:
+
+	iaddq $-4, %rdx
+    mrmovq (%rdi), %r8
+	jle CopyLess4
+    iaddq $-2, %rdx
+	mrmovq 32(%rdi), %r12
+	jle Copy5to6
+Copy7:
+	mrmovq 48(%rdi), %r14
+	andq %r14, %r14		# val <= 0?
+	rmmovq %r14, 48(%rsi)
+	jle Copy6		# if so, goto Copy6:
+	iaddq $1, %rax		# count++
+    jmp Copy6
+Copy5to6:
+    iaddq $1, %rdx
+	je Copy5
+	# Copy 6 bytes
+Copy6:
+	mrmovq 40(%rdi), %r13
+	andq %r13, %r13		# val <= 0?
+	rmmovq %r13, 40(%rsi)
+	jle Copy5		# if so, goto Copy5:
+	iaddq $1, %rax		# count++
+Copy5:
+	andq %r12, %r12		# val <= 0?
+	rmmovq %r12, 32(%rsi)
+	jle Copy4		# if so, goto Copy4:
+	iaddq $1, %rax		# count++
+    jmp Copy4
+CopyLess4:
+    iaddq $2, %rdx
+    jle Copy1to2
+Copy3to4:
+    iaddq $-1, %rdx
+	je Copy3
+Copy4:
+	mrmovq 24(%rdi), %r11
+	andq %r11, %r11		# val <= 0?
+	rmmovq %r11, 24(%rsi)
+	jle Copy3		# if so, goto Copy3:
+	iaddq $1, %rax		# count++
+Copy3:
+	mrmovq 16(%rdi), %r10
+	andq %r10, %r10		# val <= 0?
+	rmmovq %r10, 16(%rsi)
+	jle Copy2		# if so, goto Copy2:
+	iaddq $1, %rax		# count++
+	jmp Copy2
+Copy1to2:
+	iaddq $1, %rdx
+	je Copy1
+Copy2:
+    mrmovq 8(%rdi), %r9
+	andq %r9, %r9		# val <= 0?
+    rmmovq %r9, 8(%rsi)
+	jle Copy1		# if so, goto Copy1:
+	iaddq $1, %rax		# count++
+	jmp Copy1
+Copy1:
+	andq %r8, %r8		# val <= 0?	
+    rmmovq %r8, (%rsi)
+	jle Done		# if so, goto Done:
+	iaddq $1, %rax		# count++
+	jmp Done
+
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+	ret
+##################################################################
+# Keep the following label at the end of your function
+End:
+#/* $end ncopy-ys */
+EndFun:
+
+###############################
+# Source and destination blocks 
+###############################
+	.align 8
+src:
+	.quad -1
+	.quad -2
+	.quad 3
+	.quad 4
+	.quad 0xbcdefa # This shouldn't get moved
+
+	.align 16
+Predest:
+	.quad 0xbcdefa
+dest:
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+Postdest:
+	.quad 0xdefabc
+
+.align 8
+# Run time stack
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+
+Stack:

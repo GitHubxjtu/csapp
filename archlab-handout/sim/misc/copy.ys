@@ -1,0 +1,51 @@
+# tanyonghuisapple
+.pos 0
+irmovq stack, %rsp
+call main
+halt
+
+.align 8
+# Source block
+src:
+.quad 0x00a
+.quad 0x0b0
+.quad 0xc00
+# Destination block
+dest:
+.quad 0x111
+.quad 0x222
+.quad 0x333
+
+main:
+    irmovq src, %rsi
+    irmovq dest, %rdi
+    irmovq $3, %rcx
+    call copy
+    ret
+
+copy:
+    pushq %rdi
+    pushq %rsi
+    pushq %rcx
+    pushq %r8
+    irmovq $3, %rcx
+    irmovq $1, %r9
+    irmovq $8, %r10
+    xorq %rax, %rax
+loop:
+    mrmovq (%rsi), %r8
+    rmmovq %r8, (%rdi)
+    xorq %r8, %rax
+    addq %r10, %rsi
+    addq %r10, %rdi
+    subq $%r9, %rcx
+    andq $%rcx, %rcx
+    jne loop
+    popq %r8
+    popq %rcx
+    popq %rsi
+    popq %rdi
+    ret
+    .pos 0x200
+stack:
+    .quad 0 

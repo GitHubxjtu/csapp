@@ -1,0 +1,22 @@
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+    gdb \
+    build-essential \
+    file \
+    binutils \
+    strace \
+    ltrace \
+    vim \
+    less \
+    ca-certificates \
+    procps \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /work
+
+# Default to an interactive shell so you can run gdb, ./bomb, etc.
+CMD ["bash"]
